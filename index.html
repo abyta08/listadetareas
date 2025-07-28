@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mis Tareas Diarias</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #fef9f4;
+      margin: 0;
+      padding: 1rem;
+    }
+    h1 {
+      text-align: center;
+      color: #d94f4f;
+    }
+    form {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 1rem;
+    }
+    input, button, select {
+      padding: 0.7rem;
+      margin: 0.2rem 0;
+      font-size: 1rem;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+    .tarea {
+      background: #fff;
+      padding: 0.6rem;
+      margin: 0.3rem 0;
+      border-radius: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .tarea.hecha {
+      text-decoration: line-through;
+      opacity: 0.6;
+    }
+    .tarea button {
+      background: #ff6b6b;
+      color: white;
+      border: none;
+      padding: 0.4rem 0.6rem;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+  <h1>📝 Mis Tareas Diarias</h1>
+
+  <form id="form-tarea">
+    <input type="text" id="texto" placeholder="Escribí una tarea" required />
+    <input type="date" id="fecha" required />
+    <button type="submit">Agregar</button>
+  </form>
+
+  <h2 id="fecha-titulo"></h2>
+  <div id="lista-tareas"></div>
+
+  <script>
+    const form = document.getElementById("form-tarea");
+    const texto = document.getElementById("texto");
+    const fecha = document.getElementById("fecha");
+    const lista = document.getElementById("lista-tareas");
+    const titulo = document.getElementById("fecha-titulo");
+
+    const hoy = new Date().toISOString().split("T")[0];
+    fecha.value = hoy;
+
+    function cargarTareas() {
+      lista.innerHTML = "";
+      const tareas = JSON.parse(localStorage.getItem("tareas") || "[]");
+      const tareasDeHoy = tareas.filter(t => t.fecha === fecha.value);
+      titulo.textContent = "Tareas para " + fecha.value;
+      tareasDeHoy.forEach((t, i) => {
+        const div = document.createElement("div");
+        div.className = "tarea" + (t.hecha ? " hecha" : "");
+        div.innerHTML = `
+          <span>${t.texto}</span>
+          <div>
+            <input type="checkbox" ${t.hecha ? "checked" : ""} onclick="toggle(${i}, '${t.fecha}')"/>
+            <button onclick="eliminar(${i}, '${t.fecha}')">🗑️</button>
+          </div>
+        `;
+        lista.appendChild(div);
+      });
+    }
+
+    form.addEventListener("submit", e => {
+      e.preventDefault();
+      const tareas = JSON.parse(localStorage.getItem("tareas") || "[]");
+      tareas.push({ texto: texto.value, fecha: fecha.value, hecha: false });
+      localStorage.setItem("tareas", JSON.stringify(tareas));
+      texto.value = "";
+      cargarTareas();
+    });
+
+    fecha.addEventListener("change", cargarTareas);
+
+    function eliminar(i, f) {
+      let tareas = JSON.parse(localStorage.getItem("tareas") || "[]");
+      const tareasFiltradas = tareas.filter(t => t.fecha === f);
+      tareasFiltradas.splice(i, 1);
+      const otras = tareas.filter(t => t.fecha !== f);
+      localStorage.setItem("tareas", JSON.stringify([...otras, ...tareasFiltradas]));
+      cargarTareas();
+    }
+
+    function toggle(i, f) {
+      let tareas = JSON.parse(localStorage.getItem("tareas") || "[]");
+      const tareasFiltradas = tareas.filter(t => t.fecha === f);
+      tareasFiltradas[i].hecha = !tareasFiltradas[i].hecha;
+      const otras = tareas.filter(t => t.fecha !== f);
+      localStorage.setItem("tareas", JSON.stringify([...otras, ...tareasFiltradas]));
+      cargarTareas();
+    }
+
+    cargarTareas();
+  </script>
+</body>
+</html>
